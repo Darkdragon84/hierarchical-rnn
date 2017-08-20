@@ -52,6 +52,7 @@ class HMLSTMNetwork(object):
             self._hidden_state_sizes = [hidden_state_sizes] * self._num_layers
         else:
             self._hidden_state_sizes = hidden_state_sizes
+        # now _hidden_state_sizes is definitely a list of _num_layers
 
         if task == 'classification':
             self._loss_function = tf.nn.softmax_cross_entropy_with_logits
@@ -70,6 +71,7 @@ class HMLSTMNetwork(object):
         self._initialize_gate_variables()
         self._initialize_embedding_variables()
 
+    # I think those are the g gates from (11) -> therefore size sum(hidden_sz)
     def _initialize_gate_variables(self):
         with vs.variable_scope('gates_vars'):
             for l in range(self._num_layers):
@@ -110,18 +112,20 @@ class HMLSTMNetwork(object):
         print('saving variables...')
         saver.save(self._session, path)
 
-    def gate_input(self, hidden_states):
+    def gate_input(self, hidden_states):  # I presume hidden_states is a concatenation of all hidden units?
         '''
         gate the incoming hidden states
-        hidden_states: [B, sum(h_l)]
+        hidden_states: size [B, sum(h_l)]
 
-        gated_input: [B, sum(h_l)]
+        gated_input: size [B, sum(h_l)]
         '''
+        # hidden states is of dim [?, sum_hidden-sz]
         with vs.variable_scope('gates_vars', reuse=True):
             gates = []  # [[B, 1] for l in range(L)]
-            for l in range(self._num_layers):
-                weights = vs.get_variable('gate_%d' % l, dtype=tf.float32)
-                gates.append(tf.sigmoid(tf.matmul(hidden_states, weights)))
+            for l in range(self._num_layers):  # this creates the g's in (11)
+                # every gate gets its own weights
+                weights = vs.get_variable('gate_%d' % l, dtype=tf.float32)  # [sum_hidden_sz, 1]
+                gates.append(tf.sigmoid(tf.matmul(hidden_states, weights)))  # this is a mat-mat mult.
 
             split = array_ops.split(
                 value=hidden_states,
@@ -129,8 +133,8 @@ class HMLSTMNetwork(object):
                 axis=1)
 
             gated_list = []  # [[B, h_l] for l in range(L)]
-            for gate, hidden_state in zip(gates, split):
-                gated_list.append(tf.multiply(gate, hidden_state))
+            for gate, hidden_state in zip(gates, split):  # this weighs all the h's with their respective g's for (12)
+                gated_list.append(tf.multiply(gate, hidden_state))  # element-wise multiply
 
             gated_input = tf.concat(gated_list, axis=1)  # [B, sum(h_l)]
         return gated_input
