@@ -4,9 +4,9 @@ from hmlstm import HMLSTMNetwork, prepare_inputs, get_text, viz_char_boundaries
 # generate signals
 
 print('load and prepare input')
-batch_size = 20
+batch_size = 64
 num_batches = 50
-truncate_len = 200
+truncate_len = 512
 step_size = truncate_len//2
 # text_path = 'sample.txt'
 text_path = 'text8.txt'
