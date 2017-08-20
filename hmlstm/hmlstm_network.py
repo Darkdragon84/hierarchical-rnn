@@ -28,7 +28,7 @@ class HMLSTMNetwork(object):
             it is the size of the hidden state for each layer of the hmlstm.
             If it is a list, it must have length equal to the number of layers,
             and each integer of the list is the size of the hidden state for
-            the layer correspodning to its index.
+            the layer corresponding to its index.
         out_hidden_size: integer, the size of the two hidden layers in the
             output network.
         embed_size: integer, the size of the embedding in the output network.
@@ -44,10 +44,9 @@ class HMLSTMNetwork(object):
         self._task = task
         self._output_size = output_size
 
-        if type(hidden_state_sizes) is list \
-            and len(hidden_state_sizes) != num_layers:
+        if type(hidden_state_sizes) is list and len(hidden_state_sizes) != num_layers:
             raise ValueError('The number of hidden states provided must be the'
-                             + ' same as the nubmer of layers.')
+                             + ' same as the number of layers.')
 
         if type(hidden_state_sizes) == int:
             self._hidden_state_sizes = [hidden_state_sizes] * self._num_layers
@@ -57,14 +56,14 @@ class HMLSTMNetwork(object):
         if task == 'classification':
             self._loss_function = tf.nn.softmax_cross_entropy_with_logits
         elif task == 'regression':
-            self._loss_function = lambda logits, labels: tf.square((logits - labels))
+            self._loss_function = lambda logits, labels: tf.square((logits - labels))  # shouldn't there be a reduce_sum?
 
         batch_in_shape = (None, None, self._input_size)
         batch_out_shape = (None, None, self._output_size)
         self.batch_in = tf.placeholder(
-            tf.float32, shape=batch_in_shape, name='batch_in')
+            tf.float32, shape=batch_in_shape, name='batch_in')  # training sample
         self.batch_out = tf.placeholder(
-            tf.float32, shape=batch_out_shape, name='batch_out')
+            tf.float32, shape=batch_out_shape, name='batch_out')  # ground truth
 
         self._optimizer = tf.train.AdamOptimizer(1e-3)
         self._initialize_output_variables()
@@ -329,16 +328,19 @@ class HMLSTMNetwork(object):
         optim, loss, _, _ = self._get_graph(batch_size)
 
         if not load_vars_from_disk:
-            if self._session is None:
 
+            if self._session is None: 
+                # if we don't load variables and there is no session, create one and randomly initialize tf variables
                 self._session = tf.Session()
                 init = tf.global_variables_initializer()
                 self._session.run(init)
         else:
+            # otherwise load stored variables (weights)
             self.load_variables(variable_path)
 
         for epoch in range(epochs):
             print('Epoch %d' % epoch)
+            # this is reimplementing mini-batch gradient descent, i.e. update weights based on the gradient of one batch at a time only
             for batch_in, batch_out in zip(batches_in, batches_out):
                 ops = [optim, loss]
                 feed_dict = {
