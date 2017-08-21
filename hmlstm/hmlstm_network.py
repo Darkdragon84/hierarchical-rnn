@@ -71,7 +71,7 @@ class HMLSTMNetwork(object):
         self._initialize_gate_variables()
         self._initialize_embedding_variables()
 
-    # I think those are the g gates from (11) -> therefore size sum(hidden_sz)
+    # These are the g gates from (11) -> therefore size sum(hidden_sz)
     def _initialize_gate_variables(self):
         with vs.variable_scope('gates_vars'):
             for l in range(self._num_layers):
@@ -79,11 +79,16 @@ class HMLSTMNetwork(object):
                     'gate_%s' % l, [sum(self._hidden_state_sizes), 1],
                     dtype=tf.float32)
 
+    # These are the weights for calculating the hidden embedding (12), all arranged into a single matrix
     def _initialize_embedding_variables(self):
         with vs.variable_scope('embedding_vars'):
             embed_shape = [sum(self._hidden_state_sizes), self._embed_size]
             vs.get_variable('embed_weights', embed_shape, dtype=tf.float32)
 
+    # not really sure about these variables. Earlier there's mention about
+    # "two hidden layers in the output network"
+    # from the dimensions of w1-w3 it seems that there are two more
+    # fully connected layers between the embedding and output
     def _initialize_output_variables(self):
         with vs.variable_scope('output_module_vars'):
             vs.get_variable('b1', [1, self._out_hidden_size], dtype=tf.float32)
@@ -171,14 +176,14 @@ class HMLSTMNetwork(object):
 
             # feed forward network
             # first layer
-            l1 = tf.nn.tanh(tf.matmul(embedding, w1) + b1)
+            l1 = tf.nn.tanh(tf.matmul(embedding, w1) + b1)  # of dimension [_out_hidden_size,1]
 
             # second layer
-            l2 = tf.nn.tanh(tf.matmul(l1, w2) + b2)
+            l2 = tf.nn.tanh(tf.matmul(l1, w2) + b2) # of dimension [_out_hidden_size,1]
 
             # the loss function used below
             # softmax_cross_entropy_with_logits
-            prediction = tf.add(tf.matmul(l2, w3), b3, name='prediction')
+            prediction = tf.add(tf.matmul(l2, w3), b3, name='prediction')  # of dimension [_output_size,1]
 
             loss_args = {'logits': prediction, 'labels': outcome}
             loss = self._loss_function(**loss_args)
@@ -344,7 +349,8 @@ class HMLSTMNetwork(object):
 
         for epoch in range(epochs):
             print('Epoch %d' % epoch)
-            # this is reimplementing mini-batch gradient descent, i.e. update weights based on the gradient of one batch at a time only
+            # this is reimplementing mini-batch gradient descent,
+            # i.e. update weights based on the gradient of one batch at a time only
             for batch_in, batch_out in zip(batches_in, batches_out):
                 ops = [optim, loss]
                 feed_dict = {
@@ -353,6 +359,8 @@ class HMLSTMNetwork(object):
                 }
                 _, _loss = self._session.run(ops, feed_dict)
                 print('loss:', _loss)
+                if save_vars_to_disk:
+                    self.save_variables(variable_path)
 
         self.save_variables(variable_path)
 
