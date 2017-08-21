@@ -3,7 +3,8 @@ from hmlstm.preprocessing import load_text
 import re
 from pprint import pprint
 
-batch_size = 100
+batch_size = 10
+num_batches = 10
 truncate_len = 30
 step_size = 5
 text_path = 'sample.txt'
