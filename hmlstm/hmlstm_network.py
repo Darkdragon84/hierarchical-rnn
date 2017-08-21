@@ -59,6 +59,11 @@ class HMLSTMNetwork(object):
         elif task == 'regression':
             self._loss_function = lambda logits, labels: tf.square((logits - labels))  # shouldn't there be a reduce_sum?
 
+        # batches_in/out is list(list(2D np.array)), so basically a 4D array
+        # of size (num_batches, batch_size, truncate_len, in/output_size)
+        # so, one batch is a 3D array of size (batch_size, truncate_len, in/output_size)
+        # here, for the input and output we only fix the last dimension.
+        # in TF, setting the others to None means they are flexible and can be of any size
         batch_in_shape = (None, None, self._input_size)
         batch_out_shape = (None, None, self._output_size)
         self.batch_in = tf.placeholder(
@@ -353,6 +358,7 @@ class HMLSTMNetwork(object):
             # i.e. update weights based on the gradient of one batch at a time only
             for batch_in, batch_out in zip(batches_in, batches_out):
                 ops = [optim, loss]
+                # self.batch_in and self.batch_out are tf.placeholders created in the ctor
                 feed_dict = {
                     self.batch_in: np.swapaxes(batch_in, 0, 1),
                     self.batch_out: np.swapaxes(batch_out, 0, 1),
