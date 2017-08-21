@@ -1,9 +1,7 @@
 from hmlstm import HMLSTMNetwork, prepare_inputs, get_text, viz_char_boundaries
 
-# This crashed horribly with memory overflow
-# generate signals
-
 print('load and prepare input')
+
 batch_size = 64
 num_batches = 50
 truncate_len = 512
@@ -30,11 +28,14 @@ network = HMLSTMNetwork(output_size=output_size, input_size=input_size, embed_si
                         task=task)
 
 print('train network')
+n_epochs = 5
 network.train(batches_in[:-1], batches_out[:-1], save_vars_to_disk=True,
-              load_vars_from_disk=False, variable_path='./text8')
+              load_vars_from_disk=False, variable_path='./text8_ckpt', epochs=n_epochs)
 
-predictions = network.predict(batches_in[-1], variable_path='./text8')
-boundaries = network.predict_boundaries(batches_in[-1], variable_path='./text8')
+predictions = network.predict(batches_in[-1], variable_path='./text8_ckpt')
+boundaries = network.predict_boundaries(batches_in[-1], variable_path='./text8_ckpt')
 
 # visualize boundaries
 viz_char_boundaries(get_text(batches_out[-1][0]), get_text(predictions[0]), boundaries[0])
+
+
