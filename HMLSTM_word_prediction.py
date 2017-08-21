@@ -29,11 +29,12 @@ network = HMLSTMNetwork(output_size=output_size, input_size=input_size, embed_si
 
 print('train network')
 n_epochs = 5
+ckpt_path = './text8_ckpt'
 network.train(batches_in[:-1], batches_out[:-1], save_vars_to_disk=True,
-              load_vars_from_disk=False, variable_path='./text8_ckpt', epochs=n_epochs)
+              load_vars_from_disk=False, variable_path=ckpt_path, epochs=n_epochs)
 
-predictions = network.predict(batches_in[-1], variable_path='./text8_ckpt')
-boundaries = network.predict_boundaries(batches_in[-1], variable_path='./text8_ckpt')
+predictions = network.predict(batches_in[-1], variable_path=ckpt_path)
+boundaries = network.predict_boundaries(batches_in[-1], variable_path=ckpt_path)
 
 # visualize boundaries
 viz_char_boundaries(get_text(batches_out[-1][0]), get_text(predictions[0]), boundaries[0])
