@@ -57,7 +57,8 @@ class HMLSTMNetwork(object):
         if task == 'classification':
             self._loss_function = tf.nn.softmax_cross_entropy_with_logits
         elif task == 'regression':
-            self._loss_function = lambda logits, labels: tf.square((logits - labels))  # shouldn't there be a reduce_sum?
+            # shouldn't there be a reduce_sum?
+            self._loss_function = lambda logits, labels: tf.square((logits - labels))
 
         # batches_in/out is list(list(2D np.array)), so basically a 4D array
         # of size (num_batches, batch_size, truncate_len, in/output_size)
@@ -260,6 +261,7 @@ class HMLSTMNetwork(object):
 
         return h_aboves
 
+    # creates the actual TF network graph
     def network(self, batch_size, reuse):
         hmlstm = self.create_multicell(batch_size, reuse)
 
@@ -277,6 +279,7 @@ class HMLSTMNetwork(object):
             # a list of [B, h_l + h_l + 1]
             concated_states = [array_ops.concat(tuple(s), axis=1) for s in state]
             return array_ops.concat(concated_states, axis=1)    # [B, H]
+
         # denote 'elem_len' as 'H'
         elem_len = (sum(self._hidden_state_sizes) * 2) + self._num_layers
         initial = tf.zeros([batch_size, elem_len])              # [B, H]
@@ -359,6 +362,8 @@ class HMLSTMNetwork(object):
             for batch_in, batch_out in zip(batches_in, batches_out):
                 ops = [optim, loss]
                 # self.batch_in and self.batch_out are tf.placeholders created in the ctor
+                # feed_dict provides the values for the placeholders involved in the "ops"
+                # np.swapaxes(batch_in, 0, 1) does a transpose
                 feed_dict = {
                     self.batch_in: np.swapaxes(batch_in, 0, 1),
                     self.batch_out: np.swapaxes(batch_out, 0, 1),
