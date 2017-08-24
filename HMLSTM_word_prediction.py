@@ -23,6 +23,7 @@ out_hidden_size = 1024
 hidden_state_sizes = 1024
 task = 'classification'
 
+# I added new stuff
 network = HMLSTMNetwork(output_size=output_size, input_size=input_size, embed_size=embed_size,
                         out_hidden_size=out_hidden_size, hidden_state_sizes=hidden_state_sizes,
                         task=task)
